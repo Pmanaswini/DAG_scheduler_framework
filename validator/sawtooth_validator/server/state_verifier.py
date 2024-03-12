@@ -193,9 +193,10 @@ def search_for_present_state_root(blockstore, state_view_factory):
     """
     # If there is no chain to process, then we are done.
     block = blockstore.chain_head
+
+
     if block is None:
         return None, None
-
     # Check the head first
     if state_db_has_root(state_view_factory, block.state_root_hash):
         return None, None
@@ -260,14 +261,15 @@ def execute_batches(
     scheduler = transaction_executor.create_scheduler(
         previous_state_root,
         always_persist=True)
-
     transaction_executor.execute(scheduler)
+    f = open("sawtooth_validator/execution/genisis_testing.txt", "a")
+    f.write("once\n")
+    f.close()
+#    for batch in batches:
+#        scheduler.add_batch(batch)
 
-    for batch in batches:
-        scheduler.add_batch(batch)
-
-    scheduler.finalize()
-    scheduler.complete(block=True)
+#    scheduler.finalize()
+#    scheduler.complete(block=True)
 
     state_root = None
     for batch in batches:
