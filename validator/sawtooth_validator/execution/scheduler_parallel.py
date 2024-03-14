@@ -998,7 +998,7 @@ class ParallelScheduler(Scheduler):
             next = -1
             txn_id=None
             no_longer_available = []
-            LOGGER.warning("next is called")
+            # LOGGER.warning("next is called")
 
             while(len(self._txns_available.items())):
                 self.sel_start = time.time()            
@@ -1018,13 +1018,13 @@ class ParallelScheduler(Scheduler):
 
                 if self._dependency_not_processed(deps):
                     #self.DAG_module.DAG_undo(next)
-                    LOGGER.warning("txn gets first appended")
+                    L# OGGER.warning("txn gets first appended")
                     continue
 
                 if self._txn_failed_by_dep(deps):
                     no_longer_available.append(txn_id)
                     #self.DAG_module.DAG_undo(next)
-                    LOGGER.warning("txn gets appended")
+                    # LOGGER.warning("txn gets appended")
                     self._txn_results[txn_id] = \
                         TxnExecutionResult(
                             signature=txn_id,
@@ -1175,21 +1175,21 @@ class ParallelScheduler(Scheduler):
                 cal_cre = self.DAG_end2 - self.DAG_end     
                 cal_val = self.VAL_end - self.VAL_start                                       
                 #tempx = self.DAG_module.DAG_create()
-                f = open("timing_computation.txt", "a")
-                f.write("\n-------------------")
-                f.write("\nexecution:")
-                f.write(str(cal_exe+cal_wrt+cal_cre+self.cal))
-                f.close()     
+                #f = open("timing_computation.txt", "a")
+                #f.write("\n-------------------")
+                #f.write("\nexecution:")
+                #f.write(str(cal_exe+cal_wrt+cal_cre+self.cal))
+                #f.close()     
 
-                f = open("DS_computation.txt", "a")
-                f.write("\nADJ_DAG:")
-                f.write(str(cal_wrt+cal_cre))
-                f.write("\nSMART:")
-                f.write(str(cal_wrt+cal_val))
-                f.close()     
+                #f = open("DS_computation.txt", "a")
+                #f.write("\nADJ_DAG:")
+                #f.write(str(cal_wrt+cal_cre))
+                #f.write("\nSMART:")
+                #f.write(str(cal_wrt+cal_val))
+                #f.close()     
 
                 self.DAG_module.DAG_prune()
-                LOGGER.warning("prune is called") 
+                # LOGGER.warning("prune is called") 
 
                 
                 return True
