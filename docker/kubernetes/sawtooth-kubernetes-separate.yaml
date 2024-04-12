@@ -27,7 +27,7 @@ kind: Service
 metadata:
   name: sawtooth-devmode-engine-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-devmode-engine
   ports:
@@ -64,7 +64,7 @@ kind: Service
 metadata:
   name: sawtooth-settings-tp-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-settings-tp
   ports:
@@ -101,7 +101,7 @@ kind: Service
 metadata:
   name: sawtooth-intkey-tp-python-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-intkey-tp-python
   ports:
@@ -138,7 +138,7 @@ kind: Service
 metadata:
   name: sawtooth-xo-tp-python-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-xo-tp-python
   ports:
@@ -196,7 +196,7 @@ kind: Service
 metadata:
   name: sawtooth-validator-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-validator
   ports:
@@ -244,7 +244,7 @@ kind: Service
 metadata:
   name: sawtooth-rest-api-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-rest-api
   ports:
@@ -281,7 +281,7 @@ kind: Service
 metadata:
   name: sawtooth-shell-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: sawtooth-shell
   ports:
