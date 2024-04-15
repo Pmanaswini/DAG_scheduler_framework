@@ -29,7 +29,7 @@ RUN apt-get update \
     python3 \
     unzip
 
-ENV VERSION=AUTO_STRICT
+ENV VERSION=AUTO
 
 # For Building Protobufs
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y \

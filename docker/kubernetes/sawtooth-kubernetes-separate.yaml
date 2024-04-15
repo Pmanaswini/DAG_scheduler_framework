@@ -229,7 +229,7 @@ spec:
     spec:
       containers:
       - name: sawtooth-rest-api
-        image: hyperledger/sawtooth-rest-api:chime
+        image: souvik708/sawtooth-rest-api-local:latest
         ports:
           - name: api
             containerPort: 8008
