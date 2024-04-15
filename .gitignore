@@ -76,6 +76,11 @@
 /validator/Cargo.lock
 /validator/bin/
 /validator/lib/
+/validator/DAG/batch_for_DAG.txt
+/validator/DAG/DAG_module.o
+/validator/DAG/Graph.h
+/validator/DAG/hash.o
+/validator/DAG/libgeek.so
 
 /perf/sawtooth_perf/Cargo.lock
 /perf/sawtooth_perf/target/
