@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-devmode-engine-deployment
+  name: sawtooth-devmode-engine
 spec:
   replicas: 1
   selector:
@@ -25,7 +25,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-devmode-engine-service
+  name: sawtooth-devmode-engine
 spec:
   type: LoadBalancer
   selector:
@@ -39,7 +39,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-settings-tp-deployment
+  name: sawtooth-settings-tp
 spec:
   replicas: 1
   selector:
@@ -62,7 +62,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-settings-tp-service
+  name: sawtooth-settings-tp
 spec:
   type: LoadBalancer
   selector:
@@ -76,7 +76,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-intkey-tp-python-deployment
+  name: sawtooth-intkey-tp-python
 spec:
   replicas: 1
   selector:
@@ -99,7 +99,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-intkey-tp-python-service
+  name: sawtooth-intkey-tp-python
 spec:
   type: LoadBalancer
   selector:
@@ -113,7 +113,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-xo-tp-python-deployment
+  name: sawtooth-xo-tp-python
 spec:
   replicas: 1
   selector:
@@ -136,7 +136,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-xo-tp-python-service
+  name: sawtooth-xo-tp-python
 spec:
   type: LoadBalancer
   selector:
@@ -150,7 +150,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-validator-deployment
+  name: sawtooth-validator
 spec:
   replicas: 1
   selector:
@@ -194,7 +194,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-validator-service
+  name: sawtooth-validator
 spec:
   type: LoadBalancer
   selector:
@@ -216,7 +216,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-rest-api-deployment
+  name: sawtooth-rest-api
 spec:
   replicas: 1
   selector:
@@ -242,7 +242,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-rest-api-service
+  name: sawtooth-rest-api
 spec:
   type: LoadBalancer
   selector:
@@ -256,7 +256,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-shell-deployment
+  name: sawtooth-shell
 spec:
   replicas: 1
   selector:
@@ -275,11 +275,14 @@ spec:
         args:
           - -c
           - "sawtooth keygen && tail -f /dev/null"
+        env:
+        - name: sawtoothRestApi
+          value: "sawtooth-rest-api:8008"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-shell-service
+  name: sawtooth-shell
 spec:
   type: LoadBalancer
   selector:
