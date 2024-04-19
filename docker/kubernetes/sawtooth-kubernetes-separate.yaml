@@ -277,7 +277,7 @@ spec:
           - "sawtooth keygen && tail -f /dev/null"
         env:
         - name: sawtoothRestApi
-          value: "sawtooth-rest-api:8008"
+          value: "$(SAWTOOTH_REST_API_SERVICE_HOST):8008"
 ---
 apiVersion: v1
 kind: Service
