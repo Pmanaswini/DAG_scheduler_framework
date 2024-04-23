@@ -4,16 +4,19 @@ kind: List
 
 items:
 
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     name: sawtooth-0
   spec:
     replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: sawtooth-0
     template:
       metadata:
         labels:
-          name: sawtooth-0
+          app.kubernetes.io/name: sawtooth-0
       spec:
         containers:
           - name: sawtooth-intkey-tp-python
@@ -194,16 +197,19 @@ items:
         port: 8800
         targetPort: 8800
 
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     name: sawtooth-1
   spec:
     replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: sawtooth-1
     template:
       metadata:
         labels:
-          name: sawtooth-1
+          app.kubernetes.io/name: sawtooth-1
       spec:
         containers:
           - name: sawtooth-intkey-tp-python
@@ -336,16 +342,19 @@ items:
         port: 8800
         targetPort: 8800
 
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     name: sawtooth-2
   spec:
     replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: sawtooth-2
     template:
       metadata:
         labels:
-          name: sawtooth-2
+          app.kubernetes.io/name: sawtooth-2
       spec:
         containers:
           - name: sawtooth-intkey-tp-python
@@ -478,16 +487,19 @@ items:
         port: 8800
         targetPort: 8800
 
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     name: sawtooth-3
   spec:
     replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: sawtooth-3
     template:
       metadata:
         labels:
-          name: sawtooth-3
+          app.kubernetes.io/name: sawtooth-3
       spec:
         containers:
           - name: sawtooth-intkey-tp-python
@@ -620,16 +632,19 @@ items:
         port: 8800
         targetPort: 8800
 
-- apiVersion: extensions/v1beta1
+- apiVersion: apps/v1
   kind: Deployment
   metadata:
     name: sawtooth-4
   spec:
     replicas: 1
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: sawtooth-4
     template:
       metadata:
         labels:
-          name: sawtooth-4
+          app.kubernetes.io/name: sawtooth-4
       spec:
         containers:
           - name: sawtooth-intkey-tp-python
