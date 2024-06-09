@@ -96,4 +96,12 @@
 /perf/intkey_workload/target
 /perf/intkey_workload/bin
 
+/pyprocessor/*.txt
+/pyclient/*.txt
+/validator/DAG/*.txt
+/pyclient/wallet_timing_cal.txt
+/pyprocessor/timing_cal.txt
+/validator/DAG/batch_for_DAG.txt
+
+
 *.batch
