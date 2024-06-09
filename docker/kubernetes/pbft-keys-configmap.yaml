@@ -17,13 +17,13 @@ kind: ConfigMap
 metadata:
   name: keys-config
 data:
-  pbft0priv:
-  pbft0pub:
-  pbft1priv:
-  pbft1pub:
-  pbft2priv:
-  pbft2pub:
-  pbft3priv:
-  pbft3pub:
-  pbft4priv:
-  pbft4pub:
+  pbft0priv: 5b009941494831cf8c37e5182936df545da0ac968add68dabf2ceedbe80dc6b8
+  pbft0pub: 02f00fe8d00e1793bbbb863fc9e05d72cc01ec8373ea44ad585e577bafaa76fe58
+  pbft1priv: 6c8620fd015e1e4abaf6de5799c58df4345e073968ec9901e48beeb89c7f3087
+  pbft1pub: 035462a5abebed0f01a121f17818acae6b918b01c6dce6c51122086780401e1ddc
+  pbft2priv: 481c0b69abf515fb12cda6e119233380c1027f60436ce8282848707416b6bf0b
+  pbft2pub: 02e6d2c3351b56f973d0bab23ab66a2b627e1cfe03a2e69a1d9bda7e07854fa266
+  pbft3priv: f8ebb9e514c347c30d4c12debbc2284072dfff05462784b8c863a8a122991c76
+  pbft3pub: 03af502c2090ffe08a72efac7e430cee0b1cc6cdad3a5d02df97e2b9d35a9e3562
+  pbft4priv: 876b6427f0c122b5417c347f1436df3146d8344c0f3c3f6198d4c04548b9982d
+  pbft4pub: 0362757987a8d3c4cf080ac72a16798d06674fa55139e56497efe938169e88b9c0

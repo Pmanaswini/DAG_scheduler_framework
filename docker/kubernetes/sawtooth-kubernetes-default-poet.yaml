@@ -9,7 +9,7 @@ items:
   metadata:
     name: sawtooth-0
   spec:
-    replicas: 1
+    replicas: 2
     selector:
       matchLabels:
         app.kubernetes.io/name: sawtooth-0
@@ -202,7 +202,7 @@ items:
   metadata:
     name: sawtooth-1
   spec:
-    replicas: 1
+    replicas: 2
     selector:
       matchLabels:
         app.kubernetes.io/name: sawtooth-1
@@ -347,7 +347,7 @@ items:
   metadata:
     name: sawtooth-2
   spec:
-    replicas: 1
+    replicas: 2
     selector:
       matchLabels:
         app.kubernetes.io/name: sawtooth-2
@@ -492,7 +492,7 @@ items:
   metadata:
     name: sawtooth-3
   spec:
-    replicas: 1
+    replicas: 2
     selector:
       matchLabels:
         app.kubernetes.io/name: sawtooth-3
@@ -637,7 +637,7 @@ items:
   metadata:
     name: sawtooth-4
   spec:
-    replicas: 1
+    replicas: 2
     selector:
       matchLabels:
         app.kubernetes.io/name: sawtooth-4
