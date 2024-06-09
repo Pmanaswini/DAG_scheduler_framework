@@ -20,14 +20,14 @@ spec:
           - bash
         args:
           - -c
-          - "devmode-engine-rust -C tcp://$HOSTNAME:5050"
+          - "devmode-engine-rust -C tcp://sawtooth-validator:5050"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sawtooth-devmode-engine
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-devmode-engine
   ports:
@@ -57,14 +57,14 @@ spec:
           - bash
         args:
           - -c
-          - "settings-tp -vv -C tcp://$HOSTNAME:4004"
+          - "settings-tp -vv -C tcp://sawtooth-validator:4004"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sawtooth-settings-tp
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-settings-tp
   ports:
@@ -94,14 +94,14 @@ spec:
           - bash
         args:
           - -c
-          - "intkey-tp-python -vv -C tcp://$HOSTNAME:4004"
+          - "intkey-tp-python -vv -C tcp://sawtooth-validator:4004"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sawtooth-intkey-tp-python
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-intkey-tp-python
   ports:
@@ -131,14 +131,14 @@ spec:
           - bash
         args:
           - -c
-          - "xo-tp-python -vv -C tcp://$HOSTNAME:4004"
+          - "xo-tp-python -vv -C tcp://sawtooth-validator:4004"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sawtooth-xo-tp-python
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-xo-tp-python
   ports:
@@ -186,7 +186,7 @@ spec:
             -o config.batch \
           && sawadm genesis config-genesis.batch config.batch \
           && sawtooth-validator -vv \
-              --endpoint tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+              --endpoint tcp://$SAWTOOTH_VALIDATOR_SERVICE_HOST:8800 \
               --bind component:tcp://eth0:4004 \
               --bind consensus:tcp://eth0:5050 \
               --bind network:tcp://eth0:8800"
@@ -196,7 +196,7 @@ kind: Service
 metadata:
   name: sawtooth-validator
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-validator
   ports:
@@ -237,14 +237,14 @@ spec:
           - bash
         args:
           - -c
-          - "sawtooth-rest-api -C tcp://$HOSTNAME:4004"
+          - "sawtooth-rest-api -vv -C tcp://sawtooth-validator:4004 -B 0.0.0.0:8008"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: sawtooth-rest-api
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-rest-api
   ports:
@@ -276,7 +276,7 @@ spec:
           - -c
           - "sawtooth keygen && tail -f /dev/null"
         env:
-        - name: sawtoothRestApi
+        - name: SAWTOOTH_REST_API
           value: "$(SAWTOOTH_REST_API_SERVICE_HOST):8008"
 ---
 apiVersion: v1
@@ -284,7 +284,7 @@ kind: Service
 metadata:
   name: sawtooth-shell
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: sawtooth-shell
   ports:
