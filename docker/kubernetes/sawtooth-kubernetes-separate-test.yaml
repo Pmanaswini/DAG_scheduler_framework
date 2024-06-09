@@ -1,0 +1,294 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devmode-engine-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devmode-engine
+  template:
+    metadata:
+      labels:
+        app: devmode-engine
+    spec:
+      containers:
+      - name: devmode-engine-container
+        image: hyperledger/sawtooth-devmode-engine-rust:chime
+        command:
+          - bash
+        args:
+          - -c
+          - "devmode-engine-rust -C tcp://$HOSTNAME:5050"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devmode-engine-service
+spec:
+  type: ClusterIP
+  selector:
+    app: devmode-engine
+  ports:
+  - name: "5050"
+    protocol: TCP
+    port: 5050
+    targetPort: 5050
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: settings-tp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: settings-tp
+  template:
+    metadata:
+      labels:
+        app: settings-tp
+    spec:
+      containers:
+      - name: settings-tp-container
+        image: hyperledger/sawtooth-settings-tp:chime
+        command:
+          - bash
+        args:
+          - -c
+          - "settings-tp -vv -C tcp://$HOSTNAME:4004"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: settings-tp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: settings-tp
+  ports:
+  - name: "4004"
+    protocol: TCP
+    port: 4004
+    targetPort: 4004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intkey-tp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: intkey-tp
+  template:
+    metadata:
+      labels:
+        app: intkey-tp
+    spec:
+      containers:
+      - name: intkey-tp-container
+        image: hyperledger/sawtooth-intkey-tp-python:chime
+        command:
+          - bash
+        args:
+          - -c
+          - "intkey-tp-python -vv -C tcp://$HOSTNAME:4004"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: intkey-tp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: intkey-tp
+  ports:
+  - name: "4004"
+    protocol: TCP
+    port: 4004
+    targetPort: 4004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xo-tp-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xo-tp
+  template:
+    metadata:
+      labels:
+        app: xo-tp
+    spec:
+      containers:
+      - name: xo-tp-container
+        image: hyperledger/sawtooth-xo-tp-python:chime
+        command:
+          - bash
+        args:
+          - -c
+          - "xo-tp-python -vv -C tcp://$HOSTNAME:4004"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xo-tp-service
+spec:
+  type: ClusterIP
+  selector:
+    app: xo-tp
+  ports:
+  - name: "4004"
+    protocol: TCP
+    port: 4004
+    targetPort: 4004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sawtooth-validator-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sawtooth-validator
+  template:
+    metadata:
+      labels:
+        app: sawtooth-validator
+    spec:
+      containers:
+      - name: sawtooth-validator-container
+        image: souvik708/sawtooth-validator-local:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: tp
+            containerPort: 4004
+          - name: consensus
+            containerPort: 5050
+          - name: validators
+            containerPort: 8800
+        command:
+          - bash
+        args:
+          - -c
+          - "sawadm keygen \
+          && sawtooth keygen my_key \
+          && sawset genesis -k /root/.sawtooth/keys/my_key.priv \
+          && sawset proposal create \
+            -k /root/.sawtooth/keys/my_key.priv \
+            sawtooth.consensus.algorithm.name=Devmode \
+            sawtooth.consensus.algorithm.version=0.1 \
+            -o config.batch \
+          && sawadm genesis config-genesis.batch config.batch \
+          && sawtooth-validator -vv \
+              --endpoint tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+              --bind component:tcp://eth0:4004 \
+              --bind consensus:tcp://eth0:5050 \
+              --bind network:tcp://eth0:8800"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sawtooth-validator-service
+spec:
+  type: ClusterIP
+  selector:
+    app: sawtooth-validator
+  ports:
+  - name: "4004"
+    protocol: TCP
+    port: 4004
+    targetPort: 4004
+  - name: "5050"
+    protocol: TCP
+    port: 5050
+    targetPort: 5050
+  - name: "8800"
+    protocol: TCP
+    port: 8800
+    targetPort: 8800
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sawtooth-rest-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sawtooth-rest-api
+  template:
+    metadata:
+      labels:
+        app: sawtooth-rest-api
+    spec:
+      containers:
+      - name: sawtooth-rest-api-container
+        image: souvik708/sawtooth-rest-api-local:latest
+        ports:
+          - name: api
+            containerPort: 8008
+        command:
+          - bash
+        args:
+          - -c
+          - "sawtooth-rest-api -C tcp://$HOSTNAME:4004"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sawtooth-rest-api-service
+spec:
+  type: ClusterIP
+  selector:
+    app: sawtooth-rest-api
+  ports:
+  - name: "8008"
+    protocol: TCP
+    port: 8008
+    targetPort: 8008
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sawtooth-shell-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sawtooth-shell
+  template:
+    metadata:
+      labels:
+        app: sawtooth-shell
+    spec:
+      containers:
+      - name: sawtooth-shell-container
+        image: hyperledger/sawtooth-shell:chime
+        command:
+          - bash
+        args:
+          - -c
+          - "sawtooth keygen && tail -f /dev/null"
+        env:
+        - name: sawtoothRestApi
+          value: "$(SAWTOOTH_REST_API_SERVICE_HOST):8008"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sawtooth-shell-service
+spec:
+  type: ClusterIP
+  selector:
+    app: sawtooth-shell
+  ports:
+  - name: "4004"
+    protocol: TCP
+    port: 4004
+    targetPort: 4004
