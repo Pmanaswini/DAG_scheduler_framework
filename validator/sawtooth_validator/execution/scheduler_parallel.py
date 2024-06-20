@@ -55,30 +55,34 @@ class Geek(object):
 
     # define method
     def DAG_prune(self):
-        lib.DAGPrune(self.obj)
+        lib.DAG_prune(self.obj)
 
     # define method
     def DAG_create(self):
-        return lib.DAGCreate(self.obj)
+        lib.DAG_create(self.obj)
+
+    # define method
+    def Smart_Validator(self):
+        lib.Smart_Validator(self.obj)
 
     # define method
     def DAG_create2(self):
-        lib.DAGPrint(self.obj)
-
+        lib.DAG_create2(self.obj)
 
     # define method
     def DAG_select(self):
-        return lib.DAGSelect(self.obj)
+        return lib.DAG_select(self.obj)
 
-     # define method
-    def DAG_secureValidator(self):
-        return lib.SecureValidator(self.obj)
+    # define method
+    def Smart_Validator(self):
+        return lib.Smart_Validator(self.obj)
 
- 
- 
+
+	
+
     # define method
     def DAG_delete(self, int):
-        lib.DAGDelete(self.obj, int )
+        lib.DAG_delete(self.obj, int )
 
 
 class AddressNotInTree(Exception):
@@ -519,6 +523,9 @@ class ParallelScheduler(Scheduler):
         self.sel_start = time.time()
         self.sel_end = time.time()
         self.cal=self.sel_end-self.sel_start
+        self.del_start = time.time()
+        self.del_end = time.time()
+        self.cal2=self.del_end-self.del_start        
 
 
         self._always_persist = always_persist
@@ -587,6 +594,7 @@ class ParallelScheduler(Scheduler):
             self._batches.append(batch)
             self._batches_by_id[batch.header_signature] = \
                 _AnnotatedBatch(batch, required=required, preserve=preserve)
+            self.DAG_module = Geek()
             self.DAG_start = time.time()
             self.flag=False;
             f = open("DAG/batch_for_DAG.txt", "w")
@@ -617,14 +625,12 @@ class ParallelScheduler(Scheduler):
                    f.write("\n")
 
             f.close()
-            self.DAG_end = time.time()  
-            LOGGER.warning("DAG create is called")
-            tempx = self.DAG_module.DAG_create()
-            LOGGER.warning(tempx)
-            LOGGER.warning("DAG create ended")            
+            self.DAG_end = time.time()            
+            self.DAG_module.DAG_create()
             self.DAG_end2 = time.time()      
             #temp.close()
             self.VAL_start = time.time()
+            #self.DAG_module.Smart_Validator()
             self.VAL_end = time.time()
             if state_hash is not None:
                 b_id = batch.header_signature
@@ -998,33 +1004,30 @@ class ParallelScheduler(Scheduler):
             next = -1
             txn_id=None
             no_longer_available = []
-            # LOGGER.warning("next is called")
 
             while(len(self._txns_available.items())):
                 self.sel_start = time.time()            
                 next = self.DAG_module.DAG_select()
-                #LOGGER.warning(self.DAG_module.DAG_indeg())
                 self.sel_end = time.time()
                 self.cal=self.sel_end-self.sel_start+self.cal
                 if next== -1:
                     continue
                 txn=self._total_txn[next]
                 txn_id=txn.header_signature
+
                 if (self._is_outstanding(txn_id)):
                     continue
+
+
                 header = TransactionHeader()
                 header.ParseFromString(txn.header)
                 deps = tuple(header.dependencies)
 
                 if self._dependency_not_processed(deps):
-                    #self.DAG_module.DAG_undo(next)
-                    L# OGGER.warning("txn gets first appended")
                     continue
 
                 if self._txn_failed_by_dep(deps):
                     no_longer_available.append(txn_id)
-                    #self.DAG_module.DAG_undo(next)
-                    # LOGGER.warning("txn gets appended")
                     self._txn_results[txn_id] = \
                         TxnExecutionResult(
                             signature=txn_id,
@@ -1044,7 +1047,10 @@ class ParallelScheduler(Scheduler):
                             state_hash=None)
                     no_longer_available.append(txn_id)
                     continue
+
+                
                 next_txn = txn
+
                 break
 
             if not txn_id in self._txns_available:
@@ -1063,7 +1069,10 @@ class ParallelScheduler(Scheduler):
                 self._scheduled.append(next_txn.header_signature)
 
                 del self._txns_available[next_txn.header_signature]
+                self.del_start = time.time()            
                 self.DAG_module.DAG_delete(next)
+                self.del_end = time.time()
+                self.cal2=self.del_end-self.del_start+self.cal2                
                 self._scheduled_txn_info[next_txn.header_signature] = info
                 return info
             return None
@@ -1173,25 +1182,36 @@ class ParallelScheduler(Scheduler):
                 cal_exe = self.exe_end - self.exe_start
                 cal_wrt = self.DAG_end - self.DAG_start
                 cal_cre = self.DAG_end2 - self.DAG_end     
-                cal_val = self.VAL_end - self.VAL_start                                       
-                #tempx = self.DAG_module.DAG_create()
-                #f = open("timing_computation.txt", "a")
-                #f.write("\n-------------------")
-                #f.write("\nexecution:")
-                #f.write(str(cal_exe+cal_wrt+cal_cre+self.cal))
-                #f.close()     
+                cal_val = self.VAL_end - self.VAL_start   
+           
+                prune_strt = time.time()
+                self.DAG_module.DAG_prune()                                                     
+                prune_end = time.time()                
+                cal_prune = prune_end - prune_strt      
+                f = open("timing_computation.txt", "a")
+                f.write("\n-------------------")
+                f.write("\nBatch_size:")
+                f.write(str(len(self._batches_by_txn_id)))
+                f.write("\nLL_DAG:")
+                f.write(str(cal_cre))
+                f.write("\nselection:")
+                f.write(str(self.cal))  
+                f.write("\nwrite:")
+                f.write(str(cal_wrt))   
+                f.write("\ndelete:")
+                f.write(str(self.cal2)) 
+                f.write("\nprune:")
+                f.write(str(cal_prune))                                                
+                f.write("\nexecution:")
+                f.write(str(cal_exe))
+                f.write("\n-------------------")                
+                f.close()     
 
                 #f = open("DS_computation.txt", "a")
-                #f.write("\nADJ_DAG:")
-                #f.write(str(cal_wrt+cal_cre))
                 #f.write("\nSMART:")
                 #f.write(str(cal_wrt+cal_val))
                 #f.close()     
 
-                self.DAG_module.DAG_prune()
-                # LOGGER.warning("prune is called") 
-
-                
                 return True
 
             if block:

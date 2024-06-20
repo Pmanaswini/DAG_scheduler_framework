@@ -2,34 +2,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: devmode-engine-deployment
+  name: sawtooth-devmode-engine
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: devmode-engine
+      app: sawtooth-devmode-engine
   template:
     metadata:
       labels:
-        app: devmode-engine
+        app: sawtooth-devmode-engine
     spec:
       containers:
-      - name: devmode-engine-container
+      - name: sawtooth-devmode-engine
         image: hyperledger/sawtooth-devmode-engine-rust:chime
         command:
           - bash
         args:
           - -c
-          - "devmode-engine-rust -C tcp://$HOSTNAME:5050"
+          - "devmode-engine-rust -C tcp://sawtooth-validator:5050"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: devmode-engine-service
+  name: sawtooth-devmode-engine
 spec:
   type: ClusterIP
   selector:
-    app: devmode-engine
+    app: sawtooth-devmode-engine
   ports:
   - name: "5050"
     protocol: TCP
@@ -39,34 +39,34 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: settings-tp-deployment
+  name: sawtooth-settings-tp
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: settings-tp
+      app: sawtooth-settings-tp
   template:
     metadata:
       labels:
-        app: settings-tp
+        app: sawtooth-settings-tp
     spec:
       containers:
-      - name: settings-tp-container
+      - name: sawtooth-settings-tp
         image: hyperledger/sawtooth-settings-tp:chime
         command:
           - bash
         args:
           - -c
-          - "settings-tp -vv -C tcp://$HOSTNAME:4004"
+          - "settings-tp -vv -C tcp://sawtooth-validator:4004"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: settings-tp-service
+  name: sawtooth-settings-tp
 spec:
   type: ClusterIP
   selector:
-    app: settings-tp
+    app: sawtooth-settings-tp
   ports:
   - name: "4004"
     protocol: TCP
@@ -76,34 +76,34 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: intkey-tp-deployment
+  name: sawtooth-intkey-tp-python
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: intkey-tp
+      app: sawtooth-intkey-tp-python
   template:
     metadata:
       labels:
-        app: intkey-tp
+        app: sawtooth-intkey-tp-python
     spec:
       containers:
-      - name: intkey-tp-container
+      - name: sawtooth-intkey-tp-python
         image: hyperledger/sawtooth-intkey-tp-python:chime
         command:
           - bash
         args:
           - -c
-          - "intkey-tp-python -vv -C tcp://$HOSTNAME:4004"
+          - "intkey-tp-python -vv -C tcp://sawtooth-validator:4004"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: intkey-tp-service
+  name: sawtooth-intkey-tp-python
 spec:
   type: ClusterIP
   selector:
-    app: intkey-tp
+    app: sawtooth-intkey-tp-python
   ports:
   - name: "4004"
     protocol: TCP
@@ -113,34 +113,34 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: xo-tp-deployment
+  name: sawtooth-xo-tp-python
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: xo-tp
+      app: sawtooth-xo-tp-python
   template:
     metadata:
       labels:
-        app: xo-tp
+        app: sawtooth-xo-tp-python
     spec:
       containers:
-      - name: xo-tp-container
+      - name: sawtooth-xo-tp-python
         image: hyperledger/sawtooth-xo-tp-python:chime
         command:
           - bash
         args:
           - -c
-          - "xo-tp-python -vv -C tcp://$HOSTNAME:4004"
+          - "xo-tp-python -vv -C tcp://sawtooth-validator:4004"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: xo-tp-service
+  name: sawtooth-xo-tp-python
 spec:
   type: ClusterIP
   selector:
-    app: xo-tp
+    app: sawtooth-xo-tp-python
   ports:
   - name: "4004"
     protocol: TCP
@@ -150,7 +150,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-validator-deployment
+  name: sawtooth-validator
 spec:
   replicas: 1
   selector:
@@ -162,7 +162,7 @@ spec:
         app: sawtooth-validator
     spec:
       containers:
-      - name: sawtooth-validator-container
+      - name: sawtooth-validator
         image: souvik708/sawtooth-validator-local:latest
         imagePullPolicy: IfNotPresent
         ports:
@@ -186,7 +186,7 @@ spec:
             -o config.batch \
           && sawadm genesis config-genesis.batch config.batch \
           && sawtooth-validator -vv \
-              --endpoint tcp://$SAWTOOTH_0_SERVICE_HOST:8800 \
+              --endpoint tcp://$SAWTOOTH_VALIDATOR_SERVICE_HOST:8800 \
               --bind component:tcp://eth0:4004 \
               --bind consensus:tcp://eth0:5050 \
               --bind network:tcp://eth0:8800"
@@ -194,7 +194,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-validator-service
+  name: sawtooth-validator
 spec:
   type: ClusterIP
   selector:
@@ -216,7 +216,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-rest-api-deployment
+  name: sawtooth-rest-api
 spec:
   replicas: 1
   selector:
@@ -228,7 +228,7 @@ spec:
         app: sawtooth-rest-api
     spec:
       containers:
-      - name: sawtooth-rest-api-container
+      - name: sawtooth-rest-api
         image: souvik708/sawtooth-rest-api-local:latest
         ports:
           - name: api
@@ -237,12 +237,12 @@ spec:
           - bash
         args:
           - -c
-          - "sawtooth-rest-api -C tcp://$HOSTNAME:4004"
+          - "sawtooth-rest-api -vv -C tcp://sawtooth-validator:4004 -B 0.0.0.0:8008"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-rest-api-service
+  name: sawtooth-rest-api
 spec:
   type: ClusterIP
   selector:
@@ -256,7 +256,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sawtooth-shell-deployment
+  name: sawtooth-shell
 spec:
   replicas: 1
   selector:
@@ -268,7 +268,7 @@ spec:
         app: sawtooth-shell
     spec:
       containers:
-      - name: sawtooth-shell-container
+      - name: sawtooth-shell
         image: hyperledger/sawtooth-shell:chime
         command:
           - bash
@@ -276,13 +276,25 @@ spec:
           - -c
           - "sawtooth keygen && tail -f /dev/null"
         env:
-        - name: sawtoothRestApi
+        - name: SAWTOOTH_REST_API
           value: "$(SAWTOOTH_REST_API_SERVICE_HOST):8008"
+        volumeMounts:
+        - name: pyfiles
+          mountPath: /path/to/container/pyclient
+          subPath: pyclient-custom
+        - name: pyfiles
+          mountPath: /path/to/container/pyprocessor
+          subPath: pyprocessor-custom
+      volumes:
+      - name: pyfiles
+        configMap:
+          name: pyfiles
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: sawtooth-shell-service
+  name: sawtooth-shell
 spec:
   type: ClusterIP
   selector:

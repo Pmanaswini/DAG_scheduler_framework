@@ -1,7 +1,6 @@
 
 from ctypes import cdll
 from ctypes import c_int
-import ctypes
 
 # load the library
 lib = cdll.LoadLibrary('./libgeek.so')
@@ -20,49 +19,48 @@ class Geek(object):
 
     # define method
     def DAG_prune(self):
-        lib.DAGPrune(self.obj)
+        lib.DAG_prune(self.obj)
 
     # define method
     def DAG_create(self):
-        lib.DAGCreate(self.obj)
+        lib.DAG_create(self.obj)
 
     # define method
     def DAG_create2(self):
-        lib.DAGPrint(self.obj)
+        lib.DAG_create2(self.obj)
+
+    # define method
+    def Smart_Validator(self):
+        return lib.Smart_Validator(self.obj)
 
     # define method
     def DAG_select(self):
-        return lib.DAGSelect(self.obj)
+        return lib.DAG_select(self.obj)
 
-     # define method
-    def DAG_secureValidator(self):
-        return lib.SecureValidator(self.obj)
 	
 
     # define method
     def DAG_delete(self, int):
-        lib.DAGDelete(self.obj, int )
+        lib.DAG_delete(self.obj, int )
   
 # create a Geek class object
 f = Geek()
+
 f.DAG_create()
-f.DAG_create2()
-x=f.DAG_select()
-print("----------------------------------\n")
-print(x)
 x=f.DAG_select()
 print(x)
-x=f.DAG_select()
-print(x)
-f.DAG_delete(x)
+print(f.DAG_delete(x))
+
 
 x=f.DAG_select()
 print(x)
-f.DAG_delete(x)
+print(f.DAG_delete(x))
+
 
 x=f.DAG_select()
 print(x)
-f.DAG_delete(x)
-#print("The miner is not:")
-print(f.DAG_secureValidator())
-f.DAG_prune()
+print(f.DAG_delete(x))
+f.Smart_Validator()
+#f.DAG_create2()
+
+

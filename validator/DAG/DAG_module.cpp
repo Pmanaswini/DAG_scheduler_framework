@@ -1,410 +1,447 @@
-#include <pthread.h>
-
-#include <atomic>
-#include <chrono>
-#include <cstring>
-#include <fstream>
 #include <iostream>
-#include <sstream>
+#include <fstream>
 #include <string>
 #include <thread>
-#include <vector>
+#include <pthread.h>
+#include <atomic>
+#include <chrono>
+#include "Graph.cpp"
+#include <map>
 
 using namespace std;
-using namespace std::this_thread;
-using std::atomic;
-using std::string;
-using std::thread;
-using std::vector;
+using namespace std::this_thread; 
+using namespace std::chrono; 
+typedef int int_32;
+int th_count=56;
+std::map<string, int> txn_dict;
+std::atomic<int> atomic_count{0}, AU{0}, AU2{0};
+std::atomic<bool> Mminer(false); //Flag to identify inaccurate
+int Total_txns, thcount;
+static int duration_tot[56];
+struct node
+{
+	Graph::Graph_Node *txnnode;
+	struct node *next;
+};
+struct Garbagecoll
+{
+	struct node *head;
+	struct node *tail;
+}Garcolls[56];
+// Creating an graph object
+Graph *DAG= new Graph();
+Graph *DAG2= new Graph();
 
-const int maxTxns = 1200;
 
-struct Transaction {
-  string txnId;
-  int txnNo;
-  int inputLen;
-  string inputs[10];
-  int outputLen;
-  string outputs[10];
-  bool flag = false;
+struct transaction 
+{
+    string txn_id;
+    int txn_no;
+    int input_len;
+    string inputs[4];
+    int output_len;
+    string outputs[4];
+    bool flag=false;
+    string pred;
+};
+struct Address
+{
+	string address;
+	atomic<int> Cread;
+	atomic<int> Cwrite;
 };
 
-// Node structure for the linked list
-struct addressNode {
-  int addId;
-  std::string address;
-  std::vector<int> readList;
-  std::vector<int> writeList;
-  addressNode* next;
-  addressNode(int nodeId, const std::string& addr)
-      : addId(nodeId), address(addr), next(nullptr) {}
+static Address addresses[1500];
+map<string, int> addMap;
+
+static vector<transaction> curr_txns,empty_txns;
+
+class Geek{
+    public:
+
+    static void add_nodes(int PID) 
+    {
+	    int txn,bat_no,i,j,k,inp_lo,inp_ex,out_lo,out_ex,miner=0;
+	    Graph::Graph_Node *A= new Graph::Graph_Node;
+	    Graph::Graph_Node *B= new Graph::Graph_Node;
+	    Garcolls[PID].head= new node;
+	    Garcolls[PID].tail= new node;
+	    Garcolls[PID].head->txnnode= NULL;
+	    Garcolls[PID].head->next=Garcolls[PID].tail;
+	    Garcolls[PID].tail->txnnode= NULL;
+	    Garcolls[PID].tail->next=NULL;
+	    auto start = high_resolution_clock::now();
+	    while(1)
+	    {
+	        txn=atomic_count++;
+	        if(txn>=Total_txns) 
+	        {
+	        atomic_count--; 
+	        duration_tot[PID]=miner;
+	        return;
+	        }
+	        DAG->add_node(curr_txns[txn].txn_no,curr_txns[txn].txn_no,&A);
+	        DAG2->add_node(curr_txns[txn].txn_no,curr_txns[txn].txn_no,&B);
+	        node* temp = new node;
+	        temp->next=Garcolls[PID].head->next;
+	        temp->txnnode=A;
+	        Garcolls[PID].head->next= temp;
+          	inp_lo= curr_txns[txn].input_len;
+          	out_lo= curr_txns[txn].output_len;
+
+	        for (int i = 0; i < txn; i++) 
+	        {	
+		        if(curr_txns[txn].txn_no != curr_txns[i].txn_no){
+
+		        inp_ex= curr_txns[i].input_len;
+          		out_ex= curr_txns[i].output_len;
+		        for (int j = 0; j < inp_lo; j++) {
+		        for (int k = 0; k < out_ex; k++) {
+		        
+		        if(curr_txns[txn].inputs[j]==curr_txns[i].outputs[k]) { 
+		            DAG->add_edge(curr_txns[i].txn_no, curr_txns[txn].txn_no,curr_txns[i].txn_no, curr_txns[txn].txn_no);
+		            DAG2->add_edge(curr_txns[i].txn_no,curr_txns[txn].txn_no, curr_txns[i].txn_no,      curr_txns[txn].txn_no);
+		            }
+		        }
+		        }
+		        for (int j = 0; j < out_lo; j++) {
+		        for (int k = 0; k < inp_ex; k++) {
+		        
+		        if(curr_txns[txn].outputs[j]==curr_txns[i].inputs[k]) { 
+		            DAG->add_edge(curr_txns[i].txn_no,curr_txns[txn].txn_no, curr_txns[i].txn_no, curr_txns[txn].txn_no);
+		            DAG2->add_edge(curr_txns[i].txn_no,curr_txns[txn].txn_no, curr_txns[i].txn_no, curr_txns[txn].txn_no);
+		            }
+		        }
+		        }
+		        for (int j = 0; j < out_lo; j++) {
+		        for (int k = 0; k < out_ex; k++) {
+		        
+		        if(curr_txns[txn].outputs[j]==curr_txns[i].outputs[k]) { 
+		        DAG->add_edge(curr_txns[i].txn_no,curr_txns[txn].txn_no, curr_txns[i].txn_no, curr_txns[txn].txn_no);
+		        DAG2->add_edge(curr_txns[i].txn_no,curr_txns[txn].txn_no, curr_txns[i].txn_no, curr_txns[txn].txn_no);
+		        }
+		        }
+		        }
+	        }}
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        unsigned int dwDuration = duration.count();
+        miner=miner+dwDuration;
+	        
+	    }
+
+	    };
+
+
+    static void predecessor(int PID) 
+    {
+
+	    int txn;
+	    Graph::Graph_Node *A= new Graph::Graph_Node;	
+	    while(1)
+	    {
+	        txn=AU2++;
+	        if(txn>=Total_txns) {AU2--; return;}
+	        string pred_list= DAG->find_pred(DAG,txn);
+	        curr_txns[txn].pred=pred_list;
+	    }
+   };
+
+
+
+    static void destructor(int PID) 
+	    {
+	    node* temp = new node;
+
+	    while(Garcolls[PID].head->next != Garcolls[PID].tail)
+		    {
+		        temp=Garcolls[PID].head->next;
+		        Garcolls[PID].head->next=temp->next;
+		        Graph::Graph_Node *txn= temp->txnnode;
+		        delete txn;
+		        txn= NULL;
+		        delete temp;
+		        temp=NULL;
+		    }
+
+	    };
+
+    static void Extra_edges(int PID) 
+    {
+	    int txn,bat_no,i,j,k,inp_lo,inp_ex,out_lo,out_ex;
+	    bool flag=false;
+	    while(true)
+	    {
+	        txn=atomic_count++;
+	        if(txn>=Total_txns) {atomic_count--; return;}
+          	inp_lo= curr_txns[txn].input_len;
+          	out_lo= curr_txns[txn].output_len;
+
+	        for (int i = 0; i < txn; i++) 
+	        {	
+		        if(curr_txns[txn].txn_no != curr_txns[i].txn_no)
+		        {
+		            inp_ex= curr_txns[i].input_len;
+              		out_ex= curr_txns[i].output_len;
+		            for (int j = 0; j < inp_lo; j++) {
+		            for (int k = 0; k < out_ex; k++) {  
+		            if(curr_txns[txn].inputs[j]==curr_txns[i].outputs[k]) {flag=true;}
+		            }
+		            }
+		            for (int j = 0; j < out_lo; j++) {
+		            for (int k = 0; k < inp_ex; k++) {
+		            if(curr_txns[txn].outputs[j]==curr_txns[i].inputs[k]) {flag=true;}
+		            }
+		            }
+		            for (int j = 0; j < out_lo; j++) {
+		            for (int k = 0; k < out_ex; k++) { 
+		            if(curr_txns[txn].outputs[j]==curr_txns[i].outputs[k])  {flag=true;}
+		            }
+		            }
+	            }
+	        }
+	    }
+    };
+
+
+    static void Missing_edges(int PID) 
+	    {
+	    int txn,k;
+	    
+	    string adrs;
+	    //Local map to keep track of local addresses
+        int LmapSize=0,i=0,Lpos, Gpos,inp_lo,out_lo,deg=-1;
+        struct Address localAdd[10];
+            while(true){//!Mminer){
+                txn=atomic_count++;
+                LmapSize=0;
+                map<string, int> localMap;
+                if( txn>=Total_txns) {return;}     
+                while(deg!=0)
+                {
+                    deg=DAG->findInDeg(DAG,txn);
+                }
+                inp_lo= curr_txns[txn].input_len;
+          	    out_lo= curr_txns[txn].output_len;
+          	    
+          	    for (int i = 0; i < inp_lo; i++) 
+          	        {
+          	        adrs= curr_txns[txn].inputs[i];
+          	        localMap.insert(pair<string,int>(adrs, LmapSize));
+                         if(LmapSize<localMap.size())
+                            {
+                            localAdd[LmapSize].address=adrs;
+                            localAdd[LmapSize].Cread=0;
+                            localAdd[LmapSize].Cwrite=0;
+                            LmapSize++;
+                            }
+                    }
+          	    for (int i = 0; i < out_lo; i++) {
+          	        adrs= curr_txns[txn].outputs[i];
+          	        localMap.insert(pair<string,int>(adrs, LmapSize));
+                         if(LmapSize<localMap.size()){
+                            localAdd[LmapSize].address=adrs;
+                            localAdd[LmapSize].Cread=0;
+                            localAdd[LmapSize].Cwrite=0;
+                            LmapSize++;
+                            }
+            	}
+          	    for (int i = 0; i < inp_lo; i++) {
+          	        adrs= curr_txns[txn].inputs[i];
+          	        Lpos=localMap.at(adrs);
+                    Gpos=addMap.at(adrs);
+                    if(addresses[Gpos].Cwrite != localAdd[Lpos].Cwrite){Mminer=true;}
+                    localAdd[Lpos].Cread++;
+                    addresses[Gpos].Cread++;
+                }
+          	    for (int i = 0; i < out_lo; i++) {
+          	        adrs= curr_txns[txn].outputs[i];
+          	        Lpos=localMap.at(adrs);
+                    Gpos=addMap.at(adrs);
+                    if(addresses[Gpos].Cwrite != localAdd[Lpos].Cwrite){Mminer=true;}
+                    if(addresses[Gpos].Cread != localAdd[Lpos].Cread){Mminer=true;}
+                    localAdd[Lpos].Cwrite++;
+                    addresses[Gpos].Cwrite++;
+               }
+          	    for (int i = 0; i < out_lo; i++) {
+          	        adrs= curr_txns[txn].outputs[i];
+          	        Lpos=localMap.at(adrs);
+                    Gpos=addMap.at(adrs);
+                    addresses[Gpos].Cread.fetch_sub(localAdd[Lpos].Cread);
+
+                }
+          	    for (int i = 0; i < inp_lo; i++) {
+          	        adrs= curr_txns[txn].inputs[i];
+          	        Lpos=localMap.at(adrs);
+                    Gpos=addMap.at(adrs);
+                    addresses[Gpos].Cwrite.fetch_sub(localAdd[Lpos].Cwrite);
+                }
+
+      
+	        //cout<<"R"<<txn<<endl;
+	    }
+
+    };
+
+
+
+    void DAG_prune()
+    {
+	    thread threads[th_count];
+	    for(int i=0;i<th_count;i++)	{threads[i]= thread(destructor,i); }//starting writer threads
+	    for(int i=0;i<th_count;i++){threads[i].join(); }//joining writer threads
+	    //delete DAG;
+	    Graph *DAG_new= new Graph();
+	    atomic_count=0, 
+	    AU=0;
+	    AU2=0;
+	    Total_txns=0;
+	    DAG=DAG_new;
+	    curr_txns= empty_txns;
+    };
+
+
+    int_32 DAG_select()
+    {
+        int i= DAG->inDeg_zero(DAG);
+        int_32 j;
+
+        if(i!= -1)
+        { 
+            j=curr_txns[i].txn_no;
+
+        }
+        else 
+        {
+            j=-1;
+        }
+//        cout<<"------"<<j<<"-------"<<endl;                
+        return j;
+
+    };
+
+
+
+    void DAG_delete(int n)
+    {
+        DAG->remove_AU(DAG,n);
+    };
+
+    void DAG_create2()
+    {
+        //DAG->print_BG(DAG);
+        int in_deg= DAG->print_grpah();
+	    fstream batch_file;  
+	    batch_file.open("DAG/in_deg.txt",ios::out);
+	    batch_file<<"indegree:"<<in_deg<<endl;
+    };
+
+    void Smart_Validator(){
+        int mapSize=0,inp_lo,out_lo,i;
+        thread threads[th_count];
+        struct Address add_temp;
+        string adrs;
+        for (int i = 0; i < Total_txns; i++) 
+	    {
+	        inp_lo= curr_txns[i].input_len;
+          	out_lo= curr_txns[i].output_len;
+          	for (int j = 0; j < inp_lo; j++) 
+          	{
+          	    adrs= curr_txns[i].inputs[j];
+          	    addMap.insert(pair<string,int>(adrs, mapSize));
+          	     if(mapSize<addMap.size())
+          	     {
+          	        addresses[mapSize].address=adrs;
+          	        addresses[mapSize].Cread=0;
+          	        addresses[mapSize].Cwrite=0;
+          	        mapSize++;
+          	     }
+      	    }
+          	for (int j = 0; j < out_lo; j++) 
+          	{
+          	    adrs= curr_txns[i].outputs[j];
+          	    addMap.insert(pair<string,int>(adrs, mapSize));
+          	     if(mapSize<addMap.size())
+          	     {
+          	        addresses[mapSize].address=adrs;
+          	        addresses[mapSize].Cread=0;
+          	        addresses[mapSize].Cwrite=0;
+          	        mapSize++;
+          	     }
+      	    }
+	    }
+	    atomic_count=0;
+	    //for(i=0;i<th_count;i++)	{threads[i]= thread(Missing_edges,i); }//starting writer threads
+	    //for(i=0;i<th_count;i++){threads[i].join(); }//joining writer threads
+	    atomic_count=0;
+	    for(i=0;i<th_count;i++)	{threads[i]= thread(Extra_edges,i); }//starting writer threads
+	    for(i=0;i<th_count;i++){threads[i].join(); }//joining writer threads
+
+        //return Mminer;
+
+    }
+
+    void DAG_create()
+    {
+	    
+	    int i,au_no,last_count,miner_tot=0;
+	    last_count=Total_txns;
+	    thread threads[th_count];
+	    fstream batch_file,miner_file; 
+	    struct transaction txn; 
+	    //miner_file.open("DAG/miner_timing.txt",ios::app);
+	    batch_file.open("DAG/batch_for_DAG.txt",ios::in); 
+	    if (batch_file.is_open())
+	    {   
+	        string tp;
+		    while(getline(batch_file, tp))
+		    {
+
+			    txn.txn_id= tp;
+
+			    au_no=AU;
+			    AU=AU+1;
+			    txn.txn_no=au_no;
+			    txn.pred="";
+			    getline(batch_file, tp);
+			    txn.input_len= stoi(tp);
+			    for(i=0;i<txn.input_len;i++) { getline(batch_file, tp);
+							    txn.inputs[i]=tp;	}
+			    getline(batch_file, tp);
+			    txn.output_len= stoi(tp);
+			    for(i=0;i<txn.output_len;i++) { getline(batch_file, tp);
+							    txn.outputs[i]=tp;	}
+			    curr_txns.push_back(txn);		
+		    }
+	    }
+	    batch_file.close(); 
+	    Total_txns=curr_txns.size();
+
+	    for(i=0;i<th_count;i++)	{threads[i]= thread(add_nodes,i); }//starting writer threads
+	    for(i=0;i<th_count;i++){threads[i].join(); }//joining writer threads
+    }
 };
+int main()
+{
 
-// Global head pointer for the linked list
-addressNode* head = nullptr;
 
-int totalTxns, addressId = 0, threadCount = 30;
-int transactionAdj[maxTxns][maxTxns] = {0};
-int verifyAdj[maxTxns][maxTxns] = {0};
-atomic<int> txnCounter{0}, au{0}, svCounter{0}, barrier{-1}, position{0};
-atomic<bool> minerFlag(false);
-atomic<bool> mMiner(false);
-atomic<int> inDegree[maxTxns];
+    // Creating an object
+    Geek t; 
+  
+    // Calling function
+    t.DAG_create();  
+    return 0;
 
-vector<Transaction> currTxns, emptyTxns;
-
-class Geek {
- public:
-  int DAGSelect() {
-    int i, positionLocal = position.load();
-    int varZero = 0;
-    // Check transactions from positionLocal to totalTxns
-    for (i = positionLocal; i < totalTxns; i++) {
-      // cout<<i<<" "<<"varZero:"<<varZero<<"    ";
-      if (inDegree[i] == 0 &&
-          inDegree[i].compare_exchange_strong(varZero, -1)) {
-        position.store(i, std::memory_order_release);
-        return i;
-      }
-    }
-
-    // Check transactions from 0 to positionLocal
-    for (int i = 0; i < positionLocal; i++) {
-      if (inDegree[i] == 0 &&
-          inDegree[i].compare_exchange_strong(varZero, -1)) {
-        position.store(i, std::memory_order_release);  // Update position if a
-                                                       // transaction is found
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  static void addNodes(int PID) {
-    int txnNo, batNo, inpLo, inpEx, outLo, outEx, miner = 0;
-    int prevTxn, txn;
-    while (true) {
-      int edgeTxn;
-      bool flag;
-      txnNo = txnCounter++;
-      if (txnNo >= totalTxns) {
-        return;
-      }
-      inpLo = currTxns[txnNo].inputLen;
-      outLo = currTxns[txnNo].outputLen;
-
-      for (int i = 0; i < txnNo; i++) {
-        flag = false;
-        edgeTxn = currTxns[i].txnNo;
-
-        if (inDegree[edgeTxn] != -2) {
-          inpEx = currTxns[i].inputLen;
-          outEx = currTxns[i].outputLen;
-          for (int j = 0; j < inpLo; j++) {
-            for (int k = 0; k < outEx; k++) {
-              if (currTxns[txnNo].inputs[j] == currTxns[i].outputs[k]) {
-                flag = true;
-              }
-            }
-          }
-          for (int j = 0; j < outLo; j++) {
-            for (int k = 0; k < inpEx; k++) {
-              if (currTxns[txnNo].outputs[j] == currTxns[i].inputs[k]) {
-                flag = true;
-              }
-            }
-
-            for (int k = 0; k < outEx; k++) {
-              if (currTxns[txnNo].outputs[j] == currTxns[i].outputs[k]) {
-                flag = true;
-              }
-            }
-          }
-          if (flag) {
-            transactionAdj[edgeTxn][txnNo] = 1;
-            inDegree[txnNo]++;
-          }
-        }
-      }
-    }
-  }
-
-  void DAGPrune() {
-    for (int i = 0; i < totalTxns; i++) {
-      fill_n(transactionAdj[i], totalTxns, 0);
-      inDegree[i] = 0;
-    }
-    // Reset other variables
-    txnCounter = 0;
-    totalTxns = 0;
-    currTxns.clear();
-  }
-
-  void DAGPrint() {
-    // Print transactionAdj matrix
-    for (int i = 0; i < 11; ++i) {
-      for (int j = 0; j < 11; ++j) {
-        std::cout << transactionAdj[i][j] << " ";
-      }
-      std::cout << std::endl;  // Newline for new row
-    }
-
-    std::cout << "-------------------------------------------" << std::endl;
-
-    // Print inDegree array
-    for (int j = 0; j < totalTxns; ++j) {
-      std::cout << inDegree[j] << " ";
-    }
-  }
-
-  void DAGDelete(int n) {
-    // Decrement inDegree for each transaction that has an edge from n
-    for (int i = 0; i < totalTxns; ++i) {
-      if (transactionAdj[n][i] == 1 && inDegree[i] > 0) {
-        --inDegree[i];
-      }
-    }
-    // Decrement inDegree for the completed transaction
-    --inDegree[n];
-  }
-
-  void read_adjacency_matrix() {
-    std::ifstream file("DAG/adjMatrix.txt", ios::in);
-    int num_vertices = 0;
-    std::string line;
-    while (std::getline(file, line)) {
-      std::istringstream iss(line);
-      int num;
-      int col = 0;
-      while (iss >> num) {
-        transactionAdj[num_vertices][col++] = num;
-        if (num == 1) {
-          // Increment in-degree for the current column/vertex
-          inDegree[col - 1]++;
-        }
-      }
-      ++num_vertices;
-    }
-
-    file.close();
-  }
-
-  // Function to check conflicts between read and write operations
-  static void DAGVerify(int PID) {
-    int addNo = svCounter++;
-    addressNode* node = find_id(addNo);
-    if (node == nullptr) {
-      return;
-    }
-
-    for (int writeOp : node->writeList) {
-      for (int readOp : node->readList) {
-        if (writeOp < readOp) {
-          verifyAdj[writeOp][readOp] = 1;
-          if (transactionAdj[writeOp][readOp] == 0) {
-            mMiner.store(true);  // Conflict detected
-            return;
-          }
-        }
-        if (writeOp > readOp) {
-          verifyAdj[readOp][writeOp] = 1;
-          if (transactionAdj[readOp][writeOp] == 0) {
-            mMiner.store(true);  // Conflict detected
-            return;
-          }
-        }
-      }
-      for (int writeOp2 : node->writeList) {
-        if (writeOp < writeOp2) {
-          verifyAdj[writeOp][writeOp2] = 1;
-          if (transactionAdj[writeOp][writeOp2] == 0) {
-            mMiner.store(true);  // Conflict detected
-            return;
-          }
-        }
-        if (writeOp2 < writeOp) {
-          verifyAdj[writeOp2][writeOp] = 1;
-          if (transactionAdj[writeOp2][writeOp] == 0) {
-            mMiner.store(true);  // Conflict detected
-            return;
-          }
-        }
-      }
-    }
-
-    return;  // No conflict
-  }
-
-  // Function to find a node by ID
-  static addressNode* find_id(int id) {
-    addressNode* current = head;
-    while (current != nullptr) {
-      if (current->addId == id) {
-        return current;
-      }
-      current = current->next;
-    }
-    return nullptr;  // ID not found
-  }
-
-  // Function to find a node
-  addressNode* find(const std::string& address) {
-    addressNode* current = head;
-    while (current != nullptr) {
-      if (current->address == address) {
-        return current;
-      }
-      current = current->next;
-    }
-    return nullptr;
-  }
-
-  addressNode* createAddress(const std::string& address) {
-    addressNode* node = find(address);
-    if (node) {
-      // Address already exists, return pointer
-      return node;
-    } else {
-      // Address doesn't exist, create new node with ID
-      addressNode* newNode = new addressNode(++addressId, address);
-      newNode->next = head;
-      head = newNode;
-      return newNode;
-    }
-  }
-
-  // Function to add a read operation to the read list of a node
-  void addReadOperation(addressNode* node, int value) {
-    // Add value to read list
-    node->readList.push_back(value);
-  }
-
-  // Function to add a write operation to the write list of a node
-  void addWriteOperation(addressNode* node, int value) {
-    // Add value to write list
-    node->writeList.push_back(value);
-  }
-
-  bool secureValidator() {
-    int i, n, j, txnCount = 0;
-    addressNode* nodePtr;
-    std::fstream batchFile;
-    thread threads[threadCount];
-    struct Transaction txn;
-    batchFile.open("DAG/batch_for_DAG.txt", ios::in);
-    if (batchFile.is_open()) {
-      string transactionProperty;
-      while (getline(batchFile, transactionProperty)) {
-        getline(batchFile, transactionProperty);
-        txn.inputLen = stoi(transactionProperty);
-        for (i = 0; i < txn.inputLen; i++) {
-          getline(batchFile, transactionProperty);
-          nodePtr = createAddress(transactionProperty);
-          addReadOperation(nodePtr, txnCount);
-        }
-        getline(batchFile, transactionProperty);
-        txn.outputLen = stoi(transactionProperty);
-        for (i = 0; i < txn.outputLen; i++) {
-          getline(batchFile, transactionProperty);
-          nodePtr = createAddress(transactionProperty);
-          addWriteOperation(nodePtr, txnCount);
-        }
-        txnCount++;
-      }
-    }
-    batchFile.close();
-    totalTxns = txnCount;
-    read_adjacency_matrix();
-
-    for (i = 0; i < threadCount; i++) {
-      threads[i] = thread(DAGVerify, i);
-    }
-    for (i = 0; i < threadCount; i++) {
-      threads[i].join();
-    }
-
-    n = totalTxns;
-    cout << "the miner is not:" << mMiner.load() << endl;
-    // Calculate in-degree matrix from adjacency matrix
-    vector<int> calculatedInDegree(n, 0);
-    vector<int> sharedInDegree(n, 0);
-    for (int i = 0; i < n; ++i) {
-      for (int j = 0; j < n; ++j) {
-        if (verifyAdj[i][j] == 1) {
-          calculatedInDegree[j]++;
-        }
-        if (transactionAdj[i][j] == 1) {
-          sharedInDegree[j]++;
-        }
-      }
-    }
-
-    // Compare calculated in-degree matrix with provided in-degree matrix
-    for (int i = 0; i < n; ++i) {
-      if (calculatedInDegree[i] != sharedInDegree[i]) {
-        return true;
-      }
-    }
-    return mMiner.load();
-  }
-
-  void DAGCreate() {
-    int i, j, txnCount = 0;
-    std::fstream batchFile;
-    thread threads[threadCount];
-    struct Transaction txn;
-    batchFile.open("DAG/batch_for_DAG.txt", ios::in);
-    if (batchFile.is_open()) {
-      string transactionProperty;
-      while (getline(batchFile, transactionProperty)) {
-        txn.txnId = transactionProperty;
-        txn.txnNo = txnCount++;
-        getline(batchFile, transactionProperty);
-        txn.inputLen = stoi(transactionProperty);
-        for (i = 0; i < txn.inputLen; i++) {
-          getline(batchFile, transactionProperty);
-          txn.inputs[i] = transactionProperty;
-        }
-        getline(batchFile, transactionProperty);
-        txn.outputLen = stoi(transactionProperty);
-        for (i = 0; i < txn.outputLen; i++) {
-          getline(batchFile, transactionProperty);
-          txn.outputs[i] = transactionProperty;
-        }
-        currTxns.push_back(txn);
-        cout << txn.txnNo << " ";
-      }
-    }
-    batchFile.close();
-    totalTxns = currTxns.size();
-    // cout << totalTxns;
-    // cout << "-------------------------------------------\n";
-
-    for (i = 0; i < threadCount; i++) {
-      threads[i] = thread(addNodes, i);
-    }
-    for (i = 0; i < threadCount; i++) {
-      threads[i].join();
-    }
-  }
-};
-int main() {
-  // Creating an object
-  Geek t;
-  // Calling function
-  t.DAGCreate();
-  t.DAGPrint();
-  return 0;
 }
 
-extern "C" {
+extern "C" 
+{
 
-Geek* Geek_new() { return new Geek(); }
-void DAGPrune(Geek* geek) { geek->DAGPrune(); }
-bool SecureValidator(Geek* geek, bool flag) { geek->secureValidator(); }
-void DAGCreate(Geek* geek) { geek->DAGCreate(); }
-int DAGSelect(Geek* geek) { geek->DAGSelect(); }
-void DAGPrint(Geek* geek) { geek->DAGPrint(); }
-void DAGDelete(Geek* geek, int n) { geek->DAGDelete(n); }
+	Geek* Geek_new(){ return new Geek(); }
+	void DAG_prune(Geek* geek){ geek -> DAG_prune(); }
+	void DAG_create(Geek* geek){ geek -> DAG_create(); }
+	void DAG_create2(Geek* geek){ geek -> DAG_create2(); }
+	int_32 DAG_select(Geek* geek){ geek -> DAG_select(); }
+	void Smart_Validator(Geek* geek){ geek -> Smart_Validator(); }
+	void DAG_delete(Geek* geek, int n){ geek -> DAG_delete(n); }
 }
